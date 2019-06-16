@@ -1,0 +1,47 @@
+Fork and clone this repository, Follow the instructions below(work closely with the terraform documentation) and complete the missing parts.
+
+Deploy each resource at a time, by performing “terraform apply” to the “modules/main.tf” file.
+  
+Note that:
+ You might need to add data-sources, terraform-settings, variables, tfvars, etc.. along the way.
+ Everything that can be stored in a Variable, must be in a Variable and not be written  
+ hard-coded. For sensitive variables like passowrds, use '.tfvars' file
+
+1. Configure S3 backend for the modules/main.tf file
+
+2. Complete the security-group(aws_security_group) for your application:
+    a. The security-group should be connected to your VPC
+    b. The security-group should allow incoming traffic from everywhere to your application port.  
+
+3. Complete the data-source cloudconfig template-file variables.
+
+4. Create a security-group for an ELB 
+    a. The security-group should be connected to your VPC.
+    b. The security-group should allow incoming traffic from port 80
+    c. The security-group should allow any outgoing traffic from the instance.
+
+5. Create an ELB:
+    a. The ELB port should be 8080
+    a. The ELB should be created with the ELB security-group
+    b. The ELB should be created with an health-check
+
+6. Complete the aws_launch_configuration source:
+    a. The argument-reference ‘key_name’ should be the name of your key-pair
+    b. make sure to specify the free-tier instance type
+
+7. Create an auto-scaling group:
+	a. The name of the launch configuration should be the one that was just created (obviously..)
+	b. The name of the load-balancer should be one of the provided "load_balancers"
+	c. The vpc_zone_identifier should include the public subnets
+	d. add a tag => key="Name", value="<your-cluster-name>"
+	e. complete the remaining properties
+
+8. Modify the relevent component to allow access to your application from the ELB only
+
+9. Create a security-group for the RDS database
+
+10. Create an RDS database
+
+11. Create an S3 bucket (where you will deploy your compressed application later)
+
+12. Destroy it all
