@@ -10,11 +10,30 @@ resource "aws_key_pair" "admin_key" {
 //  key_name = "${var.environment}"
   public_key = "${file("${path.module}/keys/cloudschool.pub")}"
 }
+
 resource "aws_vpc" "vpc" {
   cidr_block = "${var.vpc_cidr}"
   enable_dns_hostnames = "${var.enable_dns_hostnames}"
   enable_dns_support = "${var.enable_dns_support}"
   tags = { Name = "${var.environment}-vpc" }
+}
+resource "aws_internet_gateway" "gw" {
+  vpc_id = "${aws_vpc.vpc.id}"
+
+  tags = {
+    Name = "internet gateway"
+  }
+}
+resource "aws_route_table" "r" {
+  vpc_id = "${aws_vpc.vpc.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.gw.id}"
+  }
+  tags = {
+    Name = "route table"
+  }
 }
 
 resource "aws_security_group" "project-app" {
@@ -25,7 +44,7 @@ resource "aws_security_group" "project-app" {
   }
   ingress {
     from_port = 0
-    to_port = 80
+    to_port = 0
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -46,8 +65,8 @@ resource "aws_security_group" "project-app-elb" {
     create_before_destroy = true
   }
   ingress {
-    from_port = 80
-    to_port = 80
+    from_port = 0
+    to_port = 0
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -68,8 +87,8 @@ resource "aws_security_group" "project-app-rds" {
     create_before_destroy = true
   }
   ingress {
-    from_port = 3306
-    to_port = 3306
+    from_port = 0
+    to_port = 0
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -85,7 +104,7 @@ resource "aws_security_group" "project-app-rds" {
 }
 resource "aws_elb" "project-app-elb" {
   name               = "project-app-elb"
-  availability_zones = ["us-west-2a", "us-west-2b", "us-west-2c"]
+  //availability_zones = ["us-east-2a", "us-east-2b"]
 
   # access_logs {
   #   bucket        = "foo"
@@ -114,12 +133,14 @@ resource "aws_elb" "project-app-elb" {
   connection_draining         = true
   connection_draining_timeout = 400
   security_groups = flatten([aws_security_group.project-app-elb.id])
+  subnets = flatten([aws_subnet.private.0.id])
 
   tags = {
     Name = "project-app-elb"
   }
 }
 resource "aws_db_instance" "project-app-rds" {
+  depends_on = ["aws_internet_gateway.gw"]
   allocated_storage    = 20
   storage_type         = "gp2"
   engine               = "mysql"
@@ -128,8 +149,12 @@ resource "aws_db_instance" "project-app-rds" {
   name                 = "mydb"
   username             = "admin"
   password             = "Aa124356"
+  publicly_accessible  = true
+  skip_final_snapshot  = true
 //  parameter_group_name = "default.mysql5.7"
-  security_group_names = flatten([aws_security_group.project-app-rds.id])
+//  security_group_names = flatten([aws_security_group.project-app-rds.id])
+  vpc_security_group_ids = flatten([aws_security_group.project-app-rds.id])
+  db_subnet_group_name = "${aws_db_subnet_group.default.name}"
 //  provisioner "local-exec" {
 //    command = 
 //  }
@@ -137,7 +162,7 @@ resource "aws_db_instance" "project-app-rds" {
 resource "null_resource" "setup_db" {
   depends_on = ["aws_db_instance.project-app-rds"] #wait for the db to be ready
   provisioner "local-exec" {
-    command = "mysql -u ${aws_db_instance.my_db.username} -p${var.my_db_password} -h ${aws_db_instance.my_db.address} < db provision.sql"
+    command = "mysql -u ${aws_db_instance.project-app-rds.username} -p ${var.my_db_password} -h ${aws_db_instance.project-app-rds.address} < db_provision.sql"
   }
 }
 resource "aws_launch_configuration" "project-app_lc" {

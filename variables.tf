@@ -9,7 +9,7 @@ variable "instance_type" {
 
 variable "ami" {
   description = "ami id for project-app instances"
-  default = "ami-c80b0aa2"
+  default = "ami-0a444079f17309e2a"
 }
 
 variable "role" {
@@ -51,10 +51,12 @@ variable "enable_dns_support" {
   description = "should be true if you want to use private DNS within the VPC"
   default = true
 }
-variable "azs" { }
+variable "azs" {
+  default = ["us-east-2a", "us-east-2b"]
+ }
 variable "private_subnets" {
   description = "IP prefix of private (vpc only routing) subnets"
-  default = "172.31.0.0/19"
+  default = ["172.31.0.0/20","172.31.16.0/20"]
 }
 
 variable "public_subnets" {
@@ -79,4 +81,9 @@ variable "chef_resources_key" {
 
 variable "file-name" {
   type = "string"
+}
+variable "my_db_password" {
+  type = "string"
+    description = "Password for the RDS DB"
+    default = "Aa123456"
 }

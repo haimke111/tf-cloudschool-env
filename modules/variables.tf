@@ -11,6 +11,7 @@ variable "terraform_bucket" {
 S3 bucket with the remote state of the site module.
 The site module is a required dependency of this module
 EOS
+  default = "cls1-terraform-class"
 
 }
 
@@ -19,7 +20,7 @@ variable "site_module_state_path" {
 S3 path to the remote state of the site module.
 The site module is a required dependency of this module
 EOS
-
+  default = "1.txt"
 }
 variable "region" {
   type = "string"
@@ -37,7 +38,7 @@ variable "file-name" {
 }
 variable "private_subnets" {
   description = "IP prefix of private (vpc only routing) subnets"
-  default = "172.31.0.0/19"
+  default = ["172.31.0.0/20","172.31.16.0/20"]
 }
 
 variable "public_subnets" {
