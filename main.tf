@@ -35,7 +35,10 @@ resource "aws_route_table" "r" {
     Name = "route table"
   }
 }
-
+resource "aws_main_route_table_association" "a" {
+  vpc_id         = "${aws_vpc.vpc.id}"
+  route_table_id = "${aws_route_table.r.id}"
+}
 resource "aws_security_group" "project-app" {
   name = "${var.cluster_name}-sg"
   vpc_id = "${aws_vpc.vpc.id}"
@@ -148,7 +151,7 @@ resource "aws_db_instance" "project-app-rds" {
   instance_class       = "db.t2.micro"
   name                 = "mydb"
   username             = "admin"
-  password             = "Aa124356"
+  password             = "Aa123456"
   publicly_accessible  = true
   skip_final_snapshot  = true
 //  parameter_group_name = "default.mysql5.7"
