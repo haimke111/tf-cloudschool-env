@@ -165,7 +165,7 @@ resource "aws_db_instance" "project-app-rds" {
 resource "null_resource" "setup_db" {
   depends_on = ["aws_db_instance.project-app-rds"] #wait for the db to be ready
   provisioner "local-exec" {
-    command = "mysql -u ${aws_db_instance.project-app-rds.username} -p ${var.my_db_password} -h ${aws_db_instance.project-app-rds.address} < db_provision.sql"
+    command = "mysql -u${aws_db_instance.project-app-rds.username} -p${var.my_db_password} -h${aws_db_instance.project-app-rds.address} < db_provision.sql"
   }
 }
 resource "aws_launch_configuration" "project-app_lc" {
