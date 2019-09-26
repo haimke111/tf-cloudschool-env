@@ -8,7 +8,7 @@ data "template_file" "project-app_cloudconfig" {
 }
 resource "aws_key_pair" "admin_key" {
 //  key_name = "${var.environment}"
-  public_key = "${file("${path.module}/keys/cloudschool.pub")}"
+  public_key = "${file("${path.module}/keys/cloudschool1.pub")}"
 }
 
 resource "aws_vpc" "vpc" {
@@ -178,6 +178,7 @@ resource "aws_launch_configuration" "project-app_lc" {
   enable_monitoring = false
   image_id = "${var.ami}"
   instance_type = "${var.instance_type}"
+  key_name = "${aws_key_pair.admin_key.key_name}"
 
 }
 resource "aws_autoscaling_group" "project_app_asg" {
