@@ -1,4 +1,4 @@
-data "template_file" "project-app_cloudconfig" {
+  data "template_file" "project-app_cloudconfig" {
   template = "${file("${path.module}/templates/project-app.cloudinit")}"
   vars = {
     chef_role = "${var.chef_role}",
@@ -8,7 +8,7 @@ data "template_file" "project-app_cloudconfig" {
 }
 resource "aws_key_pair" "admin_key" {
 //  key_name = "${var.environment}"
-  public_key = "${file("${path.module}/keys/cloudschool1.pub")}"
+  public_key = "${file("${path.module}/keys/cloudschool2.pub")}"
 }
 
 resource "aws_vpc" "vpc" {
@@ -116,17 +116,17 @@ resource "aws_elb" "project-app-elb" {
   # }
 
   listener {
-    instance_port     = 80
-    instance_protocol = "http"
+    instance_port     = 5000
+    instance_protocol = "HTTP"
     lb_port           = 80
-    lb_protocol       = "http"
+    lb_protocol       = "HTTP"
   }
 
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 3
-    target              = "HTTP:80/"
+    target              = "TCP:22 "
     interval            = 30
   }
 
@@ -168,6 +168,16 @@ resource "null_resource" "setup_db" {
     command = "mysql -u${aws_db_instance.project-app-rds.username} -p${var.my_db_password} -h${aws_db_instance.project-app-rds.address} < db_provision.sql"
   }
 }
+resource "aws_route53_zone" "primary" {
+  name = "cls.rds.com"
+}
+resource "aws_route53_record" "www" {
+  zone_id = "${aws_route53_zone.primary.zone_id}"
+  name    = "www.cls-rds.com"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["${aws_db_instance.project-app-rds.address}"]
+}
 resource "aws_launch_configuration" "project-app_lc" {
   user_data = "${data.template_file.project-app_cloudconfig.rendered}"
    lifecycle {  # This is necessary to make terraform launch configurations work with autoscaling groups
@@ -184,10 +194,10 @@ resource "aws_launch_configuration" "project-app_lc" {
 resource "aws_autoscaling_group" "project_app_asg" {
   name                      = "project_app_asg"
   max_size                  = 5
-  min_size                  = 2
+  min_size                  = 1
   health_check_grace_period = 300
   health_check_type         = "ELB"
-  desired_capacity          = 4
+  desired_capacity          = 1
   force_delete              = true
   //placement_group           = "${aws_placement_group.test.id}"
   launch_configuration      = "${aws_launch_configuration.project-app_lc.name}"

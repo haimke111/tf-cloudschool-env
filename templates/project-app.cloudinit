@@ -30,8 +30,10 @@ Content-Disposition: attachement; filename=02-default.x-shellscript.template
 
 
 mkdir /etc/chef
+mkdir /etc/chef/roles
 mkdir -p /etc/chef/ohai/hints
 mkdir /var/{log,run,cache,lib}/chef
+sudo mkdir /home/ubuntu/.aws
 
 cat - >/etc/chef/runlist.json <<EOF
 {"run_list": ["role[${chef_role}]"]}
@@ -45,16 +47,40 @@ role_path         "#{current_dir}/roles"
 data_bag_path     "#{current_dir}/data_bags" 
 EOF
 
+cat - >/etc/chef/roles/cls-final-projetc.json <<EOF
+{
+  "name": "cls-final-project",
+  "run_list": [
+    "recipe[s3_file]", "recipe[cls-final-project]"
+  ]
+}
+EOF
+
+sudo cat - >~/.aws/config <<EOF
+[default]
+region = us-east-2
+EOF
+
+sudo cat - >~/.aws/credentials <<EOF
+[default]
+aws_access_key_id = AKIAIXL64U6LATBVATEA
+aws_secret_access_key = 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
+
+EOF
 
 wget https://packages.chef.io/files/stable/chefdk/3.2.30/ubuntu/18.04/chefdk_3.2.30-1_amd64.deb
 sudo dpkg -i chefdk_3.2.30-1_amd64.deb
 rm chefdk_3.2.30-1_amd64.deb 
 
+sudo apt-get update
 sudo apt-get install -y python3-pip
+sudo apt-get install -y awscli
 
 aws s3 cp s3://${chef-resources_key} /etc/chef/
-tar -zxvf ${file-name} -C /etc/chef/
+tar -xvf ${file-name} -C /etc/chef/
 rm ${file-name}
+
+sudo chef-solo -c /etc/chef/solo.rb -j /etc/chef/runlist.json
 
 touch /etc/chef/ohai/hints/ec2.json
 
